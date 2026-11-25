@@ -431,6 +431,7 @@ def extractor_env() -> dict[str, str]:
         "HOME": tmp_dir,
         "TMPDIR": tmp_dir,
         "MALLOC_ARENA_MAX": "2",
+        "NODE_OPTIONS": "--max-old-space-size=128",
     }
     if os.name == "nt":
         child_env.update({name: os.environ[name] for name in ("SYSTEMROOT", "WINDIR", "TEMP", "TMP", "PATHEXT") if name in os.environ})
@@ -481,15 +482,13 @@ def run_probe(url: str) -> dict:
         base_cmd.extend(("--js-runtimes", "node"))
 
     attempts = [ytdlp_antiblock_args(url, fallback=False)]
-    if is_youtube_url(url):
-        attempts.append(ytdlp_antiblock_args(url, fallback=True))
 
     info = None
     last_exc: Exception | None = None
     for extra_args in attempts:
         command = [*base_cmd, *extra_args, url]
         try:
-            result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=18, env=extractor_env())
+            result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=24, env=extractor_env())
             first_line = next((line for line in result.stdout.splitlines() if line.strip().startswith("{")), result.stdout)
             info = json.loads(first_line)
             break
