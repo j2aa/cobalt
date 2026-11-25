@@ -443,7 +443,7 @@ def extractor_env() -> dict[str, str]:
 def ytdlp_antiblock_args(url: str, fallback: bool = False) -> list[str]:
     args: list[str] = []
     if is_youtube_url(url):
-        clients = "web_safari,mweb,web" if fallback else "ios,web,mweb"
+        clients = "tv_embedded,web_safari,mweb" if fallback else "android_vr,ios,mweb"
         args.extend(("--extractor-args", f"youtube:player_client={clients}"))
     elif has_impersonate() and needs_impersonate(url):
         args.extend(("--impersonate", "chrome"))
@@ -483,14 +483,13 @@ def run_probe(url: str) -> dict:
     attempts = [ytdlp_antiblock_args(url, fallback=False)]
     if is_youtube_url(url):
         attempts.append(ytdlp_antiblock_args(url, fallback=True))
-        attempts.append([])
 
     info = None
     last_exc: Exception | None = None
     for extra_args in attempts:
         command = [*base_cmd, *extra_args, url]
         try:
-            result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=40, env=extractor_env())
+            result = subprocess.run(command, check=True, capture_output=True, text=True, timeout=18, env=extractor_env())
             first_line = next((line for line in result.stdout.splitlines() if line.strip().startswith("{")), result.stdout)
             info = json.loads(first_line)
             break
